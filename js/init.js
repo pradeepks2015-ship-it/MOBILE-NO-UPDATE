@@ -6,8 +6,8 @@
             }
         })();
 
-        // PWA: network-first service worker — offline support + install icon.
-        // Network-first hai, isliye online hone par HAMESHA latest file hi chalti hai.
+        // PWA: cache-first service worker (sw.js) — offline support + install icon.
+        // Naya file sirf FORCE_REFRESH (App Update Banner) se hi aati hai, dekhein sw.js.
         if ("serviceWorker" in navigator && location.protocol === "https:") {
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("./sw.js").catch(() => {});

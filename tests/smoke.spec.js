@@ -870,6 +870,55 @@ test.describe('App Update Banner', () => {
   });
 });
 
+test.describe('Service Worker — FORCE_REFRESH (App Update ka asli cache-clear)', () => {
+  // Bug (v3.0): FORCE_REFRESH sirf pehle-se-cached URLs ko dobara fetch karta
+  // tha (c.keys()) — koi purani/hataayi gayi file cache me hamesha atki rehti
+  // thi. Fix (v3.1): poora cache delete karke CORE se dobara seed karta hai.
+  // Yeh test seedhe real sw.js register karke uska asli behavior verify karta
+  // hai (app apne aap sirf https par SW register karta hai — yahan test http
+  // localhost par manually register karke isi API ko exercise karta hai, jo
+  // Chromium "trustworthy origin" maankar allow karta hai).
+  test('FORCE_REFRESH purani/hata di gayi cache entries clear karta hai aur CORE dobara fresh cache karta hai', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => document.getElementById('home-view').classList.contains('active'));
+
+    await page.evaluate(() => navigator.serviceWorker.register('./sw.js', { scope: './' }));
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    // Reload zaroori hai taaki yeh page ab controlled ho jaaye (pehli baar
+    // register karne par khud apna hi page controlled nahi hota).
+    await page.reload();
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+
+    // Purani/hata di gayi file jaisi ek fake stale entry cache me daal dete hain
+    await page.evaluate(async () => {
+      const names = await caches.keys();
+      const cache = await caches.open(names[0]);
+      await cache.put('./stale-removed-file.js', new Response('old content'));
+    });
+    const staleBefore = await page.evaluate(() => caches.match('./stale-removed-file.js').then((r) => !!r));
+    expect(staleBefore).toBe(true);
+
+    // FORCE_REFRESH bhejte hain, poora hone ka wait karte hain
+    await page.evaluate(() => new Promise((resolve) => {
+      const onMsg = (e) => {
+        if (e.data && e.data.type === 'FORCE_REFRESH_DONE') {
+          navigator.serviceWorker.removeEventListener('message', onMsg);
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      navigator.serviceWorker.controller.postMessage({ type: 'FORCE_REFRESH' });
+    }));
+
+    const staleAfter = await page.evaluate(() => caches.match('./stale-removed-file.js').then((r) => !!r));
+    expect(staleAfter).toBe(false); // purani entry saaf ho gayi
+
+    const indexCached = await page.evaluate(() => caches.match('./index.html').then((r) => !!r));
+    expect(indexCached).toBe(true); // CORE (index.html) dobara fresh cache ho gaya
+  });
+});
+
 test.describe('Entry detail view (UX fix — instant feedback + no redundant refetch)', () => {
   test('View click par turant loading overlay dikhta hai (data aane se pehle hi)', async ({ page }) => {
     let resolveEntries;
