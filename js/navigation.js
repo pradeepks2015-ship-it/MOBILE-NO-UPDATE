@@ -48,6 +48,19 @@
                     const dtrEntriesList = document.getElementById("entries-list-dtr_health");
                     if (dtrEntriesList) { dtrEntriesList.style.display = "none"; dtrEntriesList.innerHTML = ""; }
                 }
+                if (id === "permanent-disconnect") {
+                    const today = localTodayIso_();
+                    const now = new Date();
+                    const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
+                    if (document.getElementById("pd-mis-from-date")) document.getElementById("pd-mis-from-date").value = firstOfMonth;
+                    if (document.getElementById("pd-mis-to-date")) document.getElementById("pd-mis-to-date").value = today;
+                    pdDocSlots = [null, null, null, null, null];
+                    renderPdDocSlots();
+                    refreshPermanentDisconnectMisTotal("soft");
+                    refreshStorageCounter_("permanent_disconnect");
+                    const pdEntriesList = document.getElementById("entries-list-permanent_disconnect");
+                    if (pdEntriesList) { pdEntriesList.style.display = "none"; pdEntriesList.innerHTML = ""; }
+                }
                 if (id === "karya-charitra") {
                     kcInitView_();
                 }
@@ -71,6 +84,7 @@
                 if (id === "bijli-chori") headerTitle = "बिजली चोरी की जानकारी";
                 if (id === "karya-charitra") headerTitle = "कर्मचारी कार्य चरित्रावली";
                 if (id === "dtr-health") headerTitle = "DTR (ट्रांसफार्मर) हेल्थ लॉग";
+                if (id === "permanent-disconnect") headerTitle = "स्थाई विच्छेदन योग्य उपभोक्ता";
                 if (id === "summary") headerTitle = "PROGRESS REPORT";
                 if (id === "admin-dashboard") headerTitle = "ADMIN DASHBOARD";
                 document.getElementById("main-header-title").innerText = headerTitle;
@@ -118,7 +132,7 @@
                 const label = document.getElementById("selected-dc-label");
                 if (label) label.innerText = "Choose DC Name...";
                 switchView("dc-selection");
-            } else if (act === "mobile-update-view" || act === "broken-pole-view" || act === "bijli-chori-view" || act === "dtr-health-view") {
+            } else if (act === "mobile-update-view" || act === "broken-pole-view" || act === "bijli-chori-view" || act === "dtr-health-view" || act === "permanent-disconnect-view") {
                 if (act === "mobile-update-view") {
                     resetForm(true);
                 }

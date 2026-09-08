@@ -9,7 +9,7 @@
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#6cb1e1">
     <link rel="apple-touch-icon" href="./icon-192.png">
-    <script>window.__APP_VERSION__ = 10;</script>
+    <script>window.__APP_VERSION__ = 11;</script>
 </head>
 <body>
     <div id="toast-notif"></div>
@@ -148,6 +148,10 @@
                     <path d="M13 14 L11 19 L14.5 19 L12.5 24" stroke-width="1.8"/>
                     <path d="M16 6 L16 10" /><path d="M11 6 L11 9" /><path d="M21 6 L21 9" />
                     </svg> DTR (ट्रांसफार्मर) हेल्थ लॉग</button>
+                <button class="dashboard-btn" style="background: linear-gradient(135deg, #64748b 0%, #1e293b 100%);" onclick="switchView('permanent-disconnect')">8. <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-8px; margin-right:2px;" aria-hidden="true">
+                    <circle cx="16" cy="16" r="12"/>
+                    <path d="M11 11 L21 21 M21 11 L11 21" stroke-width="2"/>
+                    </svg> स्थाई विच्छेदन योग्य उपभोक्ता</button>
             </div>
         </main>
 
@@ -461,6 +465,60 @@
             </div>
         </main>
 
+        <main id="permanent-disconnect-view" class="view">
+            <div class="title-box-container"><div class="title-box"><span class="title-text-bold"><svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-8px; margin-right:2px;" aria-hidden="true"><circle cx="16" cy="16" r="12"/><path d="M11 11 L21 21 M21 11 L11 21" stroke-width="2"/></svg> स्थाई विच्छेदन योग्य उपभोक्ता</span></div></div>
+            <div class="search-panel">
+                <div id="pd-result-box" class="result-card-custom" style="display:block;">
+
+                    <!-- Details -->
+                    <div class="title-box-container"><div class="title-box" style="background-color: #ede9fe;"><span class="title-text-bold" style="color: #4c1d95;">उपभोक्ता विवरण</span></div></div>
+                    <input type="text" id="pd-consumer-name" class="teal-boundary-input" placeholder="उपभोक्ता का नाम / IVRS No *" style="margin-bottom:12px;">
+                    <select id="pd-reason" onchange="pdToggleOtherReason_()" style="width:100%; height:44px; border-radius:10px; border:1.5px solid #7c3aed; padding:0 12px; font-size:13px; font-weight:700; color:#1e293b; background:#f8fafc; outline:none; margin-bottom:8px;">
+                        <option value="">-- कारण चुनें *--</option>
+                        <option value="दीर्घकाल से बिजली उपयोग बंद">दीर्घकाल से बिजली उपयोग बंद</option>
+                        <option value="गांव से स्थाई पलायन">गांव से स्थाई पलायन</option>
+                        <option value="मकान जर्जर / टूटा हुआ">मकान जर्जर / टूटा हुआ</option>
+                        <option value="अन्य">अन्य</option>
+                    </select>
+                    <div id="pd-other-reason-box" style="display:none; margin-bottom:8px;">
+                        <input type="text" id="pd-other-reason" class="teal-boundary-input" placeholder="अन्य कारण (विस्तार से लिखें) *">
+                    </div>
+                    <input type="text" id="pd-remark" class="teal-boundary-input" placeholder="Remark (वैकल्पिक)" style="margin-bottom:14px;">
+
+                    <!-- Document slots -->
+                    <div class="title-box-container"><div class="title-box" style="background-color: #ede9fe;"><span class="title-text-bold" style="color: #4c1d95;">फोटो व दस्तावेज़</span></div></div>
+                    <div id="pd-doc-slots"></div>
+
+                </div>
+                <button id="pd-submit-btn" class="submit-sync-btn" style="display:block;" onclick="submitPermanentDisconnectEntry()">✅ Submit Entry</button>
+
+                <!-- MIS Report Section -->
+                <div style="width:100%; max-width:340px; margin: 18px auto 0 auto;">
+                    <div style="background: linear-gradient(135deg, #64748b 0%, #1e293b 100%); border-radius: 18px; padding: 16px 18px; box-shadow: 0 8px 20px rgba(30,41,59,0.18);">
+                        <div style="font-size:12px; font-weight:900; color:#f1f5f9; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; text-align:center;">📊 MIS Report — स्थाई विच्छेदन योग्य उपभोक्ता</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                            <div>
+                                <div style="font-size:10px; font-weight:800; color:#f1f5f9; text-transform:uppercase; margin-bottom:4px;">From Date</div>
+                                <input type="date" id="pd-mis-from-date" onchange="refreshPermanentDisconnectMisTotal()" style="width:100%; height:38px; border-radius:10px; border:1.5px solid #64748b; padding:0 8px; font-size:0.8rem; font-weight:700; color:#1e293b; background:#f8fafc; outline:none;">
+                            </div>
+                            <div>
+                                <div style="font-size:10px; font-weight:800; color:#f1f5f9; text-transform:uppercase; margin-bottom:4px;">To Date</div>
+                                <input type="date" id="pd-mis-to-date" onchange="refreshPermanentDisconnectMisTotal()" style="width:100%; height:38px; border-radius:10px; border:1.5px solid #64748b; padding:0 8px; font-size:0.8rem; font-weight:700; color:#1e293b; background:#f8fafc; outline:none;">
+                            </div>
+                        </div>
+                        <div id="pd-mis-total-box" style="text-align:center; margin-bottom:10px; font-size:12px; font-weight:900; color:#f1f5f9;">Total Entries: <span id="pd-mis-total">0</span></div>
+                        <div id="pd-storage-counter" style="text-align:center; margin-bottom:10px; font-size:11px; font-weight:800; color:#f1f5f9;">Local Device Storage: <span id="pd-storage-used">0</span> / <span id="pd-storage-limit">0</span> photos saved</div>
+                        <button type="button" onclick="toggleEntriesList('permanent_disconnect')" style="width:100%; height:42px; border:none; border-radius:12px; background:rgba(255,255,255,0.18); color:#f1f5f9; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">📂 Saved Entries Dekhein / Hatayein</button>
+                        <div id="entries-list-permanent_disconnect" style="display:none; margin-bottom:10px;"></div>
+                        <button id="pd-mis-pdf-btn" onclick="downloadPermanentDisconnectMisPdf()" style="width:100%; height:44px; border:none; border-radius:12px; background:linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color:#ffffff; font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; box-shadow:0 6px 14px rgba(239,68,68,0.3); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                            Download PDF MIS Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
         <main id="bijli-chori-view" class="view">
             <div class="title-box-container"><div class="title-box"><span class="title-text-bold"><svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-8px; margin-right:2px;" aria-hidden="true"><path d="M2 5 L20 5 L23 8 L30 5"/><path d="M2 8 L30 8"/><path d="M2 11 L30 11"/><path d="M4 30 L4 19 L28 19 L28 30" stroke="#b45309" stroke-width="1.6"/><rect x="9" y="24" width="4.5" height="6" stroke="#b45309" stroke-width="1.3"/><rect x="19" y="22" width="5" height="4.5" stroke="#b45309" stroke-width="1.3"/><circle cx="18" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M18 14.2 L18 19"/><path d="M18 15 L23 8"/><path d="M18 15 L14.5 17.5"/><path d="M18 19 L16 19"/><path d="M18 19 L20.5 19"/><circle cx="23" cy="8" r="1.4" fill="#dc2626" stroke="none"/></svg> बिजली चोरी की जानकारी</span></div></div>
             <div class="search-panel">
@@ -669,6 +727,7 @@
     <script defer src="js/broken-pole.js"></script>
     <script defer src="js/bijli-chori.js"></script>
     <script defer src="js/dtr-health.js"></script>
+    <script defer src="js/permanent-disconnect.js"></script>
     <script defer src="js/entry-list-shared.js"></script>
     <script defer src="js/mobile-correction.js"></script>
     <script defer src="js/karya-charitra-data.js"></script>

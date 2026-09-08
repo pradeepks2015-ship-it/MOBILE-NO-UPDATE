@@ -4,7 +4,8 @@
             broken_pole: [],
             bijli_chori: [],
             karya_charitra: [],
-            dtr_health: []
+            dtr_health: [],
+            permanent_disconnect: []
         };
         const sharedModuleLastFetch = {};
 
