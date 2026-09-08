@@ -26,6 +26,15 @@
                 getTitle: (e) => `${e.date || ""} — ${e.dtr_no || "Entry"}`,
                 getSubtitle: (e) => e.issue_type || (e.gps_location || ""),
                 refreshFn: () => refreshDtrHealthMisTotal()
+            },
+            permanent_disconnect: {
+                label: "स्थाई विच्छेदन योग्य उपभोक्ता",
+                accent: "#7c3aed",
+                getEntries: getPermanentDisconnectEntries_,
+                getThumb: (e) => (e.photos && e.photos[0] && (e.photos[0].photo_data || normalizeDrivePhotoUrl_(e.photos[0].photo_url))) || "",
+                getTitle: (e) => `${e.date || ""} — ${e.consumer_name || "Entry"}`,
+                getSubtitle: (e) => `${(e.photos || []).length} दस्तावेज़ | ${e.reason || ""}`,
+                refreshFn: () => refreshPermanentDisconnectMisTotal()
             }
         };
 
@@ -67,7 +76,8 @@
             const map = {
                 broken_pole: "bp",
                 bijli_chori: "bc",
-                dtr_health: "dtr"
+                dtr_health: "dtr",
+                permanent_disconnect: "pd"
             };
             return map[storeName] || storeName;
         }
@@ -206,6 +216,30 @@
                             ${isValidLatLon_(p.gps_latitude, p.gps_longitude) ? `<div style="margin-top:6px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${trustedHtml_(p.gps_latitude)},${trustedHtml_(p.gps_longitude)}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:11px; font-weight:900; text-transform:uppercase; padding:8px 14px; border-radius:10px; text-decoration:none;">Get Directions</a></div>` : ""}
                         </div>
                     `).join(""))}
+                `;
+            } else if (storeName === "permanent_disconnect") {
+                bodyHtml = `
+                    <div class="photo-meta-row"><strong>Date:</strong> ${escapeHtml(entry.date || "")}</div>
+                    <div class="photo-meta-row"><strong>उपभोक्ता:</strong> ${escapeHtml(entry.consumer_name || "")}</div>
+                    <div class="photo-meta-row"><strong>कारण:</strong> ${escapeHtml(entry.reason || "")}</div>
+                    <div class="photo-meta-row"><strong>Remark:</strong> ${escapeHtml(entry.remark || "")}</div>
+                    ${trustedHtml_((entry.photos || []).map((p, idx) => {
+                        const isImg = String(p.photo_data || "").startsWith("data:image") || (p.photo_url && !p.photo_url.match(/\.pdf($|\?)/i));
+                        return `
+                        <div style="margin-top:10px; padding-top:10px; border-top:1px solid #e5e7eb;">
+                            <div style="font-size:11px; font-weight:900; color:#1e293b; margin-bottom:6px;">${escapeHtml(p.name || ("दस्तावेज़ " + (idx + 1)))}</div>
+                            ${isImg
+                                ? (p.photo_data ? `<img src="${escapeHtml(p.photo_data)}" alt="दस्तावेज़" style="width:100%; max-height:200px; object-fit:cover; border-radius:10px; margin-bottom:6px;">` : (p.photo_url ? `<img src="${escapeHtml(normalizeDrivePhotoUrl_(p.photo_url))}" alt="दस्तावेज़" style="width:100%; max-height:200px; object-fit:cover; border-radius:10px; margin-bottom:6px;" referrerpolicy="no-referrer">` : ""))
+                                : `<a href="${escapeHtml(p.photo_data || normalizeDrivePhotoUrl_(p.photo_url) || "")}" target="_blank" rel="noopener" style="display:inline-block; margin-bottom:6px; font-size:11px; font-weight:800; color:#5b21b6; background:#ede9fe; border-radius:8px; padding:6px 10px;">📄 दस्तावेज़ देखें</a>`
+                            }
+                            ${(p.gps_latitude && p.gps_longitude) ? `
+                                <div class="photo-meta-row"><strong>GPS:</strong> ${escapeHtml(`${p.gps_latitude}, ${p.gps_longitude}`)}</div>
+                                <div class="photo-meta-row"><strong>Location:</strong> ${escapeHtml(p.gps_location || "N/A")}</div>
+                                ${isValidLatLon_(p.gps_latitude, p.gps_longitude) ? `<div style="margin-top:6px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${trustedHtml_(p.gps_latitude)},${trustedHtml_(p.gps_longitude)}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:11px; font-weight:900; text-transform:uppercase; padding:8px 14px; border-radius:10px; text-decoration:none;">Get Directions</a></div>` : ""}
+                            ` : ""}
+                        </div>
+                    `;
+                    }).join(""))}
                 `;
             } else if (storeName === "dtr_health") {
                 bodyHtml = `

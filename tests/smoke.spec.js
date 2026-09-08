@@ -67,7 +67,7 @@ test.describe('बूट और होम स्क्रीन', () => {
 });
 
 test.describe('DC dashboard — hidden/removed features', () => {
-  test('dc-dashboard पर ठीक 7 buttons दिखते हैं, कोई SHMS/Stock/PDC/STM/PeakLoad नहीं', async ({ page }) => {
+  test('dc-dashboard पर ठीक 8 buttons दिखते हैं, कोई SHMS/Stock/PDC/STM/PeakLoad नहीं', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await openApp(page);
@@ -82,10 +82,11 @@ test.describe('DC dashboard — hidden/removed features', () => {
       '5. बिजली चोरी की जानकारी',
       '6. कर्मचारी कार्य चरित्रावली',
       '7. DTR (ट्रांसफार्मर) हेल्थ लॉग',
+      '8. स्थाई विच्छेदन योग्य उपभोक्ता',
     ]);
-    // Sabhi 7 buttons ab custom SVG icon use karte hain (emoji nahi) — VASOOLI
+    // Sabhi 8 buttons ab custom SVG icon use karte hain (emoji nahi) — VASOOLI
     // TRACKER ke andar ₹ ek SVG <text> hai isliye woh textContent me bhi aata hai.
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       await expect(page.locator('#dc-dashboard-view .dashboard-btn').nth(i).locator('svg')).toBeVisible();
     }
     expect(errors).toEqual([]);
@@ -491,6 +492,7 @@ test.describe('Broken Pole / बिजली चोरी / कर्मचा�
     ['bijli-chori', 'bijli-chori-view'],
     ['karya-charitra', 'karya-charitra-view'],
     ['dtr-health', 'dtr-health-view'],
+    ['permanent-disconnect', 'permanent-disconnect-view'],
   ]) {
     test(`${id} view बिना error के खुलता है`, async ({ page }) => {
       const errors = [];
@@ -603,6 +605,62 @@ test.describe('Broken Pole / बिजली चोरी / कर्मचा�
     await page.fill('#dtr-mis-to-date', isoToday);
     await page.locator('#dtr-mis-to-date').dispatchEvent('change');
     await expect(page.locator('#dtr-mis-total')).toHaveText('1');
+
+    expect(errors).toEqual([]);
+  });
+
+  test('स्थाई विच्छेदन योग्य उपभोक्ता: परिसर फोटो (GPS) + पंचायत प्रमाण पत्र + सहायक दस्तावेज़ ke saath submit karne se entry save hoti hai, list me dikhti hai', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await openApp(page, {
+      beforeGoto: async (p) => {
+        await p.route('**/macros/**', (route) => {
+          if (route.request().method() === 'POST') {
+            return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', entry_id: 'PD_TEST_1' }) });
+          }
+          return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', entries: [] }) });
+        });
+      },
+    });
+    await goToDcDashboard(page);
+    await page.evaluate(() => switchView('permanent-disconnect'));
+    await page.waitForFunction(() => document.getElementById('permanent-disconnect-view').classList.contains('active'));
+
+    await page.fill('#pd-consumer-name', 'रामलाल — IVRS 1134029336');
+    await page.selectOption('#pd-reason', 'गांव से स्थाई पलायन');
+
+    // Sirf naam/karan bharkar submit karne par दोनों zaroori documents ka toast aana chahiye
+    await page.click('#pd-submit-btn');
+    await page.waitForFunction(() => document.getElementById('toast-notif')?.textContent?.includes('परिसर की फोटो'));
+
+    // Pehla GPS-photo slot (परिसर की फोटो 1) — GPS auto-capture trigger hoti hai
+    await page.setInputFiles('#pd-doc-0', { name: 'premises.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
+    await page.waitForFunction(() => document.querySelectorAll('#pd-doc-slots img').length > 0);
+
+    // Pramaan-patra (index 3, GPS-photo slots ke baad) bina bhare submit karne par uska bhi toast aana chahiye
+    await page.click('#pd-submit-btn');
+    await page.waitForFunction(() => document.getElementById('toast-notif')?.textContent?.includes('प्रमाण पत्र'));
+
+    await page.setInputFiles('#pd-doc-3', { name: 'panchayat-certificate.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
+    await page.setInputFiles('#pd-doc-4', { name: 'supporting.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
+    await page.waitForFunction(() => document.querySelectorAll('#pd-doc-slots img').length >= 3);
+
+    await page.click('#pd-submit-btn');
+    await page.waitForFunction(() => document.getElementById('toast-notif')?.textContent?.includes('Entry Saved'));
+
+    await expect(page.locator('#pd-consumer-name')).toHaveValue('');
+    await expect(page.locator('#pd-doc-slots img')).toHaveCount(0);
+
+    await page.evaluate(() => toggleEntriesList('permanent_disconnect'));
+    const listBox = page.locator('#entries-list-permanent_disconnect');
+    await expect(listBox).toContainText('रामलाल — IVRS 1134029336');
+    await expect(listBox).toContainText('3 दस्तावेज़');
+
+    const isoToday = new Date().toISOString().slice(0, 10);
+    await page.fill('#pd-mis-from-date', isoToday);
+    await page.fill('#pd-mis-to-date', isoToday);
+    await page.locator('#pd-mis-to-date').dispatchEvent('change');
+    await expect(page.locator('#pd-mis-total')).toHaveText('1');
 
     expect(errors).toEqual([]);
   });

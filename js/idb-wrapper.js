@@ -2,8 +2,8 @@
         // localStorage has a tiny ~5-10MB shared limit; IndexedDB allows much larger storage
         // for entries that include base64 photo data.
         const IDB_DB_NAME = "seoni-circle-photo-store";
-        const IDB_DB_VERSION = 6;
-        const IDB_STORES = ["broken_pole", "bijli_chori", "karya_charitra", "mobile_correction", "dtr_health", "sync_queue"];
+        const IDB_DB_VERSION = 7;
+        const IDB_STORES = ["broken_pole", "bijli_chori", "karya_charitra", "mobile_correction", "dtr_health", "permanent_disconnect", "sync_queue"];
         // Max entries allowed per store (raised from 500 to 2000 - photos are resized small,
         // so 2000 entries comfortably fits within typical IndexedDB quotas on mobile browsers).
         const IDB_STORE_LIMITS = {
@@ -11,7 +11,8 @@
             bijli_chori: 200,
             karya_charitra: 1000,  // Text-only, no photos — higher limit ok
             mobile_correction: 2000, // Text-only, no photos — higher limit ok
-            dtr_health: 500
+            dtr_health: 500,
+            permanent_disconnect: 150 // Har entry me 2-5 documents ho sakte hain — sabse zyada storage-heavy
         };
         // Note: Cloud (Google Sheet/Drive) has no practical limit for DC-level usage.
         // Local limits above are conservative since cloud sync backs up all entries.
