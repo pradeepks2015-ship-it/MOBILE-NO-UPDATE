@@ -1,16 +1,22 @@
         // ===== स्थाई विच्छेदन योग्य उपभोक्ता (Permanent Disconnection Eligible Consumer) =====
-        // बिजली चोरी module jaisa hi multi-document slot pattern — sirf pehla slot
-        // (परिसर की फोटो) GPS capture karta hai (yahi disconnect-worthy premises ki
-        // location prove karta hai); baaki slots (ग्राम पंचायत प्रमाण पत्र + सहायक
-        // दस्तावेज़) sirf file upload hain, GPS ki zaroorat nahi.
+        // बिजली चोरी module jaisa hi multi-document slot pattern — pehle 3 slots
+        // (परिसर की फोटो — alag-alag angle/saboot) GPS capture karte hain (yahi
+        // disconnect-worthy premises ki location prove karta hai); baaki slots
+        // (ग्राम पंचायत प्रमाण पत्र + सहायक दस्तावेज़) sirf file upload hain, GPS ki
+        // zaroorat nahi.
+        const PD_GPS_PHOTO_COUNT = 3;
+        const PD_CERT_IDX = PD_GPS_PHOTO_COUNT; // 3
         const PD_SLOT_LABELS = [
-            "परिसर की फोटो (GPS सहित) *",
+            "परिसर की फोटो 1 (GPS सहित) *",
+            "परिसर की फोटो 2 (GPS सहित)",
+            "परिसर की फोटो 3 (GPS सहित)",
             "ग्राम पंचायत प्रमाण पत्र *",
             "सहायक दस्तावेज़ 1",
             "सहायक दस्तावेज़ 2",
             "सहायक दस्तावेज़ 3"
         ];
-        let pdDocSlots = [null, null, null, null, null]; // each: { name, docData, geo } or null
+        let pdDocSlots = new Array(PD_SLOT_LABELS.length).fill(null); // each: { name, docData, geo } or null
+        function pdIsGpsSlot_(idx) { return idx < PD_GPS_PHOTO_COUNT; }
 
         function renderPdDocSlots() {
             const container = document.getElementById("pd-doc-slots");
@@ -26,12 +32,12 @@
                         </label>
                         ${slot ? `<button type="button" onclick="removePdDoc(${idx})" style="border:none; background:#ede9fe; color:#5b21b6; border-radius:999px; padding:6px 10px; font-size:0.66rem; font-weight:900; text-transform:uppercase;">हटाएं</button>` : ""}
                     </div>
-                    <input type="file" id="pd-doc-${idx}" accept="image/*,application/pdf" ${idx === 0 ? 'capture="environment"' : ""} style="display:none;" onchange="handlePdDocChange(${idx})">
+                    <input type="file" id="pd-doc-${idx}" accept="image/*,application/pdf" ${pdIsGpsSlot_(idx) ? 'capture="environment"' : ""} style="display:none;" onchange="handlePdDocChange(${idx})">
                     ${slot ? `
                         <div style="margin-top:8px;">
                             ${slot.docData && slot.docData.startsWith("data:image") ? `<img src="${escapeHtml(slot.docData)}" alt="चुना गया दस्तावेज़" style="width:100%; max-height:140px; object-fit:cover; border-radius:10px; border:1px solid #ddd6fe;">` : `<div style="font-size:11px; font-weight:800; color:#5b21b6; padding:10px; background:#ede9fe; border-radius:10px;">📄 फ़ाइल चुनी गई (PDF/अन्य)</div>`}
                             <input type="text" value="${escapeHtml(slot.name || "")}" placeholder="दस्तावेज़ का नाम" oninput="updatePdDocName(${idx}, this.value)" style="width:100%; margin-top:8px; height:40px; border-radius:10px; border:1.5px solid #ddd6fe; padding:0 10px; font-size:0.8rem; font-weight:700; color:#4c1d95; background:#ffffff; outline:none;">
-                            ${idx === 0 ? `
+                            ${pdIsGpsSlot_(idx) ? `
                                 <div class="photo-meta-box" style="display:block; margin-top:8px;">
                                     <div class="photo-meta-row"><strong>Lat-Long:</strong> ${slot.geo ? `${trustedHtml_(slot.geo.latitude)}, ${trustedHtml_(slot.geo.longitude)}` : "Not captured"}</div>
                                     <div class="photo-meta-row"><strong>Location:</strong> ${slot.geo ? escapeHtml(slot.geo.locationText || "GPS location captured") : "Not captured"}</div>
@@ -51,23 +57,23 @@
                 pdDocSlots[idx] = {
                     name: pdDocSlots[idx]?.name || PD_SLOT_LABELS[idx].replace(" *", ""),
                     docData,
-                    geo: idx === 0 ? { latitude: "Fetching...", longitude: "Fetching...", locationText: "GPS location detect ki ja rahi hai" } : null
+                    geo: pdIsGpsSlot_(idx) ? { latitude: "Fetching...", longitude: "Fetching...", locationText: "GPS location detect ki ja rahi hai" } : null
                 };
                 renderPdDocSlots();
 
-                if (idx === 0) {
+                if (pdIsGpsSlot_(idx)) {
                     try {
                         const position = await getCurrentPositionAsync();
                         const latitude = position.coords.latitude.toFixed(6);
                         const longitude = position.coords.longitude.toFixed(6);
                         const locationText = await reverseGeocodeLocation(latitude, longitude);
-                        if (pdDocSlots[0]) {
-                            pdDocSlots[0].geo = { latitude, longitude, locationText };
+                        if (pdDocSlots[idx]) {
+                            pdDocSlots[idx].geo = { latitude, longitude, locationText };
                             renderPdDocSlots();
                         }
                     } catch (_) {
-                        if (pdDocSlots[0]) {
-                            pdDocSlots[0].geo = {
+                        if (pdDocSlots[idx]) {
+                            pdDocSlots[idx].geo = {
                                 latitude: "Available nahi",
                                 longitude: "Available nahi",
                                 locationText: "GPS permission allow nahi hui ya signal weak tha"
@@ -130,8 +136,8 @@
             if (!consumerName) return showToast("उपभोक्ता का नाम / IVRS No दर्ज करें", false);
             if (!reason) return showToast("कारण चुनें", false);
             if (reason === "अन्य" && !otherReason) return showToast("अन्य कारण विस्तार से लिखें", false);
-            if (!pdDocSlots[0]) return showToast("परिसर की फोटो (GPS सहित) ज़रूरी है", false);
-            if (!pdDocSlots[1]) return showToast("ग्राम पंचायत प्रमाण पत्र ज़रूरी है", false);
+            if (!pdDocSlots[0]) return showToast("परिसर की फोटो 1 (GPS सहित) ज़रूरी है", false);
+            if (!pdDocSlots[PD_CERT_IDX]) return showToast("ग्राम पंचायत प्रमाण पत्र ज़रूरी है", false);
 
             const finalReason = reason === "अन्य" ? `अन्य: ${otherReason}` : reason;
             const docs = pdDocSlots.filter(Boolean);
@@ -184,7 +190,7 @@
                 document.getElementById("pd-other-reason").value = "";
                 document.getElementById("pd-other-reason-box").style.display = "none";
                 document.getElementById("pd-remark").value = "";
-                pdDocSlots = [null, null, null, null, null];
+                pdDocSlots = new Array(PD_SLOT_LABELS.length).fill(null);
                 renderPdDocSlots();
                 await refreshPermanentDisconnectMisTotal();
                 await refreshStorageCounter_("permanent_disconnect");

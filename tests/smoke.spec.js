@@ -633,16 +633,16 @@ test.describe('Broken Pole / बिजली चोरी / कर्मचा�
     await page.click('#pd-submit-btn');
     await page.waitForFunction(() => document.getElementById('toast-notif')?.textContent?.includes('परिसर की फोटो'));
 
-    // Pehla slot (परिसर की फोटो) — GPS auto-capture trigger hoti hai
+    // Pehla GPS-photo slot (परिसर की फोटो 1) — GPS auto-capture trigger hoti hai
     await page.setInputFiles('#pd-doc-0', { name: 'premises.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
     await page.waitForFunction(() => document.querySelectorAll('#pd-doc-slots img').length > 0);
 
-    // Doosra slot (प्रमाण पत्र) bina bhare submit karne par uska bhi toast aana chahiye
+    // Pramaan-patra (index 3, GPS-photo slots ke baad) bina bhare submit karne par uska bhi toast aana chahiye
     await page.click('#pd-submit-btn');
     await page.waitForFunction(() => document.getElementById('toast-notif')?.textContent?.includes('प्रमाण पत्र'));
 
-    await page.setInputFiles('#pd-doc-1', { name: 'panchayat-certificate.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
-    await page.setInputFiles('#pd-doc-2', { name: 'supporting.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
+    await page.setInputFiles('#pd-doc-3', { name: 'panchayat-certificate.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
+    await page.setInputFiles('#pd-doc-4', { name: 'supporting.png', mimeType: 'image/png', buffer: Buffer.from(PNG_1PX_BASE64, 'base64') });
     await page.waitForFunction(() => document.querySelectorAll('#pd-doc-slots img').length >= 3);
 
     await page.click('#pd-submit-btn');
